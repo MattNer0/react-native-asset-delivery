@@ -1,0 +1,26 @@
+{
+  "name": "react-native-asset-delivery",
+  "version": "1.0.0",
+  "description": "React Native module for play store asset delivery and apple on-demand resources",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "react",
+    "react-native",
+    "react-component",
+    "file-system",
+    "storage",
+    "on-demand",
+    "asset-delivery"
+  ],
+  "author": "MattNer0",
+  "license": "MIT",
+  "repository": "https://github.com/MattNer0/react-native-asset-delivery",
+  "bugs": "https://github.com/MattNer0/react-native-asset-delivery/issues",
+  "peerDependencies": {
+    "react-native": "*"
+  }
+}

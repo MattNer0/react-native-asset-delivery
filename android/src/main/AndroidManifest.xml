@@ -1,0 +1,5 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.mattnero.assetdelivery">
+    <application>
+        <service android:name=".RNAssetDeliveryModule" android:exported="true" />
+    </application>
+</manifest>
