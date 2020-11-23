@@ -1,7 +1,8 @@
 #import "RNAssetDelivery.h"
+#import <React/RCTLog.h>
 
 @interface RNAssetDelivery ()
-  @property (nonatomic) NSBundleResourceRequest *resourceRequest;
+  @property (nonatomic) NSMutableDictionary *resourceRequest;
 @end
 
 @implementation RNAssetDelivery
@@ -12,15 +13,22 @@
 }
 RCT_EXPORT_MODULE()
 
+- (instancetype)init {
+    self = [super init];
+    self.resourceRequest = [[NSMutableDictionary alloc] init];
+
+    return self;
+}
+
 RCT_EXPORT_METHOD(getPackState:(NSString *)name 
     resolver:(RCTPromiseResolveBlock)resolve 
     rejecter:(RCTPromiseRejectBlock)reject) {
 
     @try {
-        NSSet *tags = [NSSet setWithObjects: name];
+        NSSet *tags = [NSSet setWithArray: @[name]];
         // Use the shorter initialization method as all resources are in the main bundle
-        self.resourceRequest = [[NSBundleResourceRequest alloc] initWithTags:tags];
-        [self.resourceRequest conditionallyBeginAccessingResourcesWithCompletionHandler:
+        self.resourceRequest[name] = [[NSBundleResourceRequest alloc] initWithTags:tags];
+        [self.resourceRequest[name] conditionallyBeginAccessingResourcesWithCompletionHandler:
                                                         ^(BOOL resourcesAvailable)
             {
                 if (resourcesAvailable) {
@@ -32,7 +40,7 @@ RCT_EXPORT_METHOD(getPackState:(NSString *)name
         ];
     }
     @catch(NSException *exception) {
-        NSError err = [NSError errorWithDomain:exception.name code:0 userInfo:@{
+        NSError *err = [NSError errorWithDomain:exception.name code:0 userInfo:@{
             NSUnderlyingErrorKey: exception,
             NSDebugDescriptionErrorKey: exception.userInfo ?: @{ },
             NSLocalizedFailureReasonErrorKey: (exception.reason ?: @"???")
@@ -44,35 +52,28 @@ RCT_EXPORT_METHOD(getPackState:(NSString *)name
 RCT_EXPORT_METHOD(getPackLocation:(NSString *)name 
     resolver:(RCTPromiseResolveBlock)resolve 
     rejecter:(RCTPromiseRejectBlock)reject) {
-    resolve(YES);
+    RCTLogWarn(@"Method 'getPackLocation' not valid");
+    resolve(@(NO));
 }
 
 RCT_EXPORT_METHOD(getPackContent:(NSString *)name 
     resolver:(RCTPromiseResolveBlock)resolve 
     rejecter:(RCTPromiseRejectBlock)reject) {
+    RCTLogWarn(@"Method 'getPackContent' not valid");
+    resolve(@(NO));
+}
+
+RCT_EXPORT_METHOD(getPackFileUrl:(NSString *)name 
+    resolver:(RCTPromiseResolveBlock)resolve 
+    rejecter:(RCTPromiseRejectBlock)reject) {
 
     @try {
-        __weak typeof(self) weakSelf = self;
-        NSSet *tags = [NSSet setWithObjects: name];
-        // Use the shorter initialization method as all resources are in the main bundle
-        self.resourceRequest = [[NSBundleResourceRequest alloc] initWithTags:tags];
-        [self.resourceRequest conditionallyBeginAccessingResourcesWithCompletionHandler:
-                                                        ^(BOOL resourcesAvailable)
-            {
-                __strong typeof(weakSelf) strongSelf = weakSelf;
-                if (resourcesAvailable) {
-                    NSBundle *resourceBundle = strongSelf.resourceRequest.bundle;
-                    NSArray *filePaths = [NSBundle pathsForResourcesOfType:nil inDirectory:[resourceBundle resourcePath]];
-                    resolve(filePaths);
-                } else {
-                    NSError *errMsg = [NSError errorWithDomain:@"getPackContent" code:0 userInfo:nil];
-                    reject(@"error", @"resources not available", errMsg);
-                }
-            }
-        ];
+        NSURL *fileUrl = [[NSBundle mainBundle] URLForResource:name withExtension:nil];
+        NSString *urlString = [fileUrl absoluteString];
+        resolve(absoluteString);
     }
     @catch(NSException *exception) {
-        NSError err = [NSError errorWithDomain:exception.name code:0 userInfo:@{
+        NSError *err = [NSError errorWithDomain:exception.name code:0 userInfo:@{
             NSUnderlyingErrorKey: exception,
             NSDebugDescriptionErrorKey: exception.userInfo ?: @{ },
             NSLocalizedFailureReasonErrorKey: (exception.reason ?: @"???")
@@ -86,11 +87,12 @@ RCT_EXPORT_METHOD(fetchPack:(NSString *)name
     rejecter:(RCTPromiseRejectBlock)reject) {
 
     @try {
-        NSSet *tags = [NSSet setWithObjects: name];
+        NSSet *tags = [NSSet setWithArray: @[name]];
+
         // Use the shorter initialization method as all resources are in the main bundle
-        self.resourceRequest = [[NSBundleResourceRequest alloc] initWithTags:tags];
-        self.resourceRequest.loadingPriority = NSBundleResourceRequestLoadingPriorityUrgent;
-        [self.resourceRequest beginAccessingResourcesWithCompletionHandler:
+        self.resourceRequest[name] = [[NSBundleResourceRequest alloc] initWithTags:tags];
+        self.resourceRequest[name].loadingPriority = NSBundleResourceRequestLoadingPriorityUrgent;
+        [self.resourceRequest[name] beginAccessingResourcesWithCompletionHandler:
                                     ^(NSError * __nullable error)
             {
                 if (error) {
@@ -104,7 +106,12 @@ RCT_EXPORT_METHOD(fetchPack:(NSString *)name
         ];
     }
     @catch(NSException *exception) {
-        reject(@"error", @"Couldn't fetch pack.", exception);
+        NSError *err = [NSError errorWithDomain:exception.name code:0 userInfo:@{
+            NSUnderlyingErrorKey: exception,
+            NSDebugDescriptionErrorKey: exception.userInfo ?: @{ },
+            NSLocalizedFailureReasonErrorKey: (exception.reason ?: @"???")
+        }];
+        reject(@"error", @"Couldn't fetch pack.", err);
     }
 }
 

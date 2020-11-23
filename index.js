@@ -12,6 +12,9 @@ var AssetDelivery = {
     getPackContent(name) {
         return RNAssetDelivery.getPackContent(name);
     },
+    getPackFileUrl(name) {
+        return RNAssetDelivery.getPackFileUrl(name);
+    },
     getPackState(name) {
         return RNAssetDelivery.getPackState(name);
     },
