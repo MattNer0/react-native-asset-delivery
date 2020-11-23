@@ -1,5 +1,5 @@
 /**
- * @providesModule AssetDelivery
+ * @providesModule RNAssetDelivery
  */
 
 var { NativeModules } = require("react-native");
