@@ -4,7 +4,8 @@
 
 RCT_EXPORT_MODULE();
 
-RCT_REMAP_METHOD(getPackState:(NSString *)name 
+RCT_REMAP_METHOD(getPackState,
+    name:(NSString *)name 
     resolver:(RCTPromiseResolveBlock)resolve 
     rejecter:(RCTPromiseRejectBlock)reject) {
 
@@ -28,13 +29,15 @@ RCT_REMAP_METHOD(getPackState:(NSString *)name
     }
 }
 
-RCT_REMAP_METHOD(getPackLocation:(NSString *)name 
+RCT_REMAP_METHOD(getPackLocation,
+    name:(NSString *)name 
     resolver:(RCTPromiseResolveBlock)resolve 
     rejecter:(RCTPromiseRejectBlock)reject) {
     resolve(YES);
 }
 
-RCT_REMAP_METHOD(getPackContent:(NSString *)name 
+RCT_REMAP_METHOD(getPackContent,
+    name:(NSString *)name 
     resolver:(RCTPromiseResolveBlock)resolve 
     rejecter:(RCTPromiseRejectBlock)reject) {
 
@@ -59,7 +62,8 @@ RCT_REMAP_METHOD(getPackContent:(NSString *)name
     }
 }
 
-RCT_REMAP_METHOD(fetchPack:(NSString *)name 
+RCT_REMAP_METHOD(fetchPack,
+    name:(NSString *)name 
     resolver:(RCTPromiseResolveBlock)resolve 
     rejecter:(RCTPromiseRejectBlock)reject) {
 
