@@ -4,7 +4,9 @@
 
 RCT_EXPORT_MODULE();
 
-RCT_REMAP_METHOD(getPackState:(NSString *)name, getPackStateWithResolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
+RCT_EXPORT_METHOD(getPackState: (NSString *)name 
+    resolver:(RCTPromiseResolveBlock)resolve 
+    rejecter:(RCTPromiseRejectBlock)reject) {
 
     NSSet *tags = [NSSet setWithObjects: name];
     // Use the shorter initialization method as all resources are in the main bundle
@@ -21,11 +23,15 @@ RCT_REMAP_METHOD(getPackState:(NSString *)name, getPackStateWithResolver:(RCTPro
     ];
 }
 
-RCT_REMAP_METHOD(getPackLocation:(NSString *)name, getPackLocationWithResolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
+RCT_EXPORT_METHOD(getPackLocation: (NSString *)name 
+    resolver:(RCTPromiseResolveBlock)resolve 
+    rejecter:(RCTPromiseRejectBlock)reject) {
     resolve(YES);
 }
 
-RCT_REMAP_METHOD(getPackContent:(NSString *)name, getPackContentWithResolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
+RCT_EXPORT_METHOD(getPackContent: (NSString *)name 
+    resolver:(RCTPromiseResolveBlock)resolve 
+    rejecter:(RCTPromiseRejectBlock)reject) {
 
     NSSet *tags = [NSSet setWithObjects: name];
     // Use the shorter initialization method as all resources are in the main bundle
@@ -43,7 +49,9 @@ RCT_REMAP_METHOD(getPackContent:(NSString *)name, getPackContentWithResolver:(RC
     ];
 }
 
-RCT_REMAP_METHOD(fetchPack:(NSString *)name, fetchPackWithResolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
+RCT_EXPORT_METHOD(fetchPack: (NSString *)name 
+    resolver:(RCTPromiseResolveBlock)resolve 
+    rejecter:(RCTPromiseRejectBlock)reject) {
 
     NSSet *tags = [NSSet setWithObjects: name];
     // Use the shorter initialization method as all resources are in the main bundle
