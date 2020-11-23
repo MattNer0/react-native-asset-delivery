@@ -171,8 +171,8 @@ public class RNAssetDeliveryModule extends ReactContextBaseJavaModule implements
             locationMap.putString("path", retrievedPackLocation.path());
 
             promise.resolve(locationMap);
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
             promise.reject(e.getClass().getSimpleName(), e.getMessage());
         }
     }
@@ -201,8 +201,8 @@ public class RNAssetDeliveryModule extends ReactContextBaseJavaModule implements
             }
 
             promise.resolve(fileMaps);
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
             promise.reject(e.getClass().getSimpleName(), e.getMessage());
         }
     }
