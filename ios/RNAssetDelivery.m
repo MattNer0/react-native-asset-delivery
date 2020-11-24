@@ -26,7 +26,6 @@ RCT_EXPORT_METHOD(getPackState:(NSString *)name
 
     @try {
         NSSet *tags = [NSSet setWithArray: @[name]];
-        // Use the shorter initialization method as all resources are in the main bundle
         self.resourceRequest[name] = [[NSBundleResourceRequest alloc] initWithTags:tags];
         [self.resourceRequest[name] conditionallyBeginAccessingResourcesWithCompletionHandler:
                                                         ^(BOOL resourcesAvailable)
@@ -88,8 +87,6 @@ RCT_EXPORT_METHOD(fetchPack:(NSString *)name
 
     @try {
         NSSet *tags = [NSSet setWithArray: @[name]];
-
-        // Use the shorter initialization method as all resources are in the main bundle
         self.resourceRequest[name] = [[NSBundleResourceRequest alloc] initWithTags:tags];
         self.resourceRequest[name].loadingPriority = NSBundleResourceRequestLoadingPriorityUrgent;
         [self.resourceRequest[name] beginAccessingResourcesWithCompletionHandler:
@@ -112,6 +109,41 @@ RCT_EXPORT_METHOD(fetchPack:(NSString *)name
             NSLocalizedFailureReasonErrorKey: (exception.reason ?: @"???")
         }];
         reject(@"error", @"Couldn't fetch pack.", err);
+    }
+}
+
+RCT_EXPORT_METHOD(removePack:(NSString *)name 
+    resolver:(RCTPromiseResolveBlock)resolve 
+    rejecter:(RCTPromiseRejectBlock)reject) {
+
+    @try {
+        if ([self.resourceRequest objectForKey:name]) {
+            [self.resourceRequest[name] endAccessingResources];
+            resolve(@(YES));
+        } else {
+            __weak typeof(self.resourceRequest) weakDictionary = self.resourceRequest;
+            NSSet *tags = [NSSet setWithArray: @[name]];
+            self.resourceRequest[name] = [[NSBundleResourceRequest alloc] initWithTags:tags];
+            [self.resourceRequest[name] conditionallyBeginAccessingResourcesWithCompletionHandler:
+                                                            ^(BOOL resourcesAvailable)
+                {
+                    __strong typeof(weakDictionary) strongDictionary = weakDictionary;
+                    if (resourcesAvailable) {
+                        [strongDictionary[name] endAccessingResources];
+                    }
+
+                    resolve(@(YES));
+                }
+            ];
+        }
+    }
+    @catch(NSException *exception) {
+        NSError *err = [NSError errorWithDomain:exception.name code:0 userInfo:@{
+            NSUnderlyingErrorKey: exception,
+            NSDebugDescriptionErrorKey: exception.userInfo ?: @{ },
+            NSLocalizedFailureReasonErrorKey: (exception.reason ?: @"???")
+        }];
+        reject(@"error", @"Couldn't get pack state.", err);
     }
 }
 
