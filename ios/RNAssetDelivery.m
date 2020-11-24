@@ -2,7 +2,7 @@
 #import <React/RCTLog.h>
 
 @interface RNAssetDelivery ()
-  @property (nonatomic) NSMutableDictionary *resourceRequest;
+  @property (nonatomic) NSMutableDictionary<NSString*, NSBundleResourceRequest*> *resourceRequest;
 @end
 
 @implementation RNAssetDelivery
@@ -70,7 +70,7 @@ RCT_EXPORT_METHOD(getPackFileUrl:(NSString *)name
     @try {
         NSURL *fileUrl = [[NSBundle mainBundle] URLForResource:name withExtension:nil];
         NSString *urlString = [fileUrl absoluteString];
-        resolve(absoluteString);
+        resolve(urlString);
     }
     @catch(NSException *exception) {
         NSError *err = [NSError errorWithDomain:exception.name code:0 userInfo:@{
