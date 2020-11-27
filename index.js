@@ -7,7 +7,7 @@ var RNAssetDelivery = NativeModules.RNAssetDelivery || {};
 var eventEmitter
 
 try {
-    eventEmitter = new NativeEventEmitter(ModuleWithEmitter);
+    eventEmitter = new NativeEventEmitter(RNAssetDelivery);
 } catch(err) {
     console.warn(err.message)
 }
