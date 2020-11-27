@@ -21,6 +21,9 @@ var AssetDelivery = {
     fetchPack(name) {
         return RNAssetDelivery.fetchPack(name);
     },
+    fetchPackProgress(name, callback) {
+        return RNAssetDelivery.fetchPackProgress(name, callback);
+    },
     removePack(name) {
         return RNAssetDelivery.removePack(name);
     }
