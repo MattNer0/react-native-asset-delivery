@@ -4,7 +4,8 @@
 @interface RNAssetDelivery ()
   @property (nonatomic) NSMutableDictionary<NSString*, NSBundleResourceRequest*> *resourceRequest;
   @property (nonatomic) NSString *fetchTag;
-  @property RCTResponseSenderBlock progressCallback;
+  @property bool hasListeners;
+  //@property RCTResponseSenderBlock progressCallback;
 @end
 
 @implementation RNAssetDelivery
@@ -17,6 +18,20 @@
 + (BOOL)requiresMainQueueSetup
 {
     return YES;
+}
+
+- (NSArray<NSString *> *)supportedEvents {
+    return @[@"onProgress"];
+}
+
+// Will be called when this module's first listener is added.
+-(void)startObserving {
+    self.hasListeners = YES;
+}
+
+// Will be called when this module's last listener is removed, or on dealloc.
+-(void)stopObserving {
+    self.hasListeners = NO;
 }
 
 RCT_EXPORT_MODULE()
@@ -94,40 +109,7 @@ RCT_EXPORT_METHOD(fetchPack:(NSString *)name
     rejecter:(RCTPromiseRejectBlock)reject) {
 
     @try {
-        NSSet *tags = [NSSet setWithArray: @[name]];
-        self.resourceRequest[name] = [[NSBundleResourceRequest alloc] initWithTags:tags];
-        self.resourceRequest[name].loadingPriority = NSBundleResourceRequestLoadingPriorityUrgent;
-        [self.resourceRequest[name] beginAccessingResourcesWithCompletionHandler:
-                                    ^(NSError * __nullable error)
-            {
-                if (error) {
-                    reject(@"error", @"resources not available", error);
-                    return;
-                }
-        
-                // The associated resources are loaded
-                resolve(@(YES));
-            }
-        ];
-    }
-    @catch(NSException *exception) {
-        NSError *err = [NSError errorWithDomain:exception.name code:0 userInfo:@{
-            NSUnderlyingErrorKey: exception,
-            NSDebugDescriptionErrorKey: exception.userInfo ?: @{ },
-            NSLocalizedFailureReasonErrorKey: (exception.reason ?: @"???")
-        }];
-        reject(@"error", @"Couldn't fetch pack.", err);
-    }
-}
-
-RCT_EXPORT_METHOD(fetchPackProgress:(NSString *)name 
-    callback:(RCTResponseSenderBlock)callback 
-    resolver:(RCTPromiseResolveBlock)resolve 
-    rejecter:(RCTPromiseRejectBlock)reject) {
-
-    @try {
-        self.fetchTag = name
-        self.progressCallback = callback
+        self.fetchTag = name;
         NSSet *tags = [NSSet setWithArray: @[name]];
         self.resourceRequest[name] = [[NSBundleResourceRequest alloc] initWithTags:tags];
         self.resourceRequest[name].loadingPriority = NSBundleResourceRequestLoadingPriorityUrgent;
@@ -163,8 +145,10 @@ RCT_EXPORT_METHOD(fetchPackProgress:(NSString *)name
     @try {
         if ([keyPath isEqualToString:@"fractionCompleted"]) {
             // Get the current progress as a value between 0 and 1
-            double progressSoFar = self.resourceRequest[self.fetchTag].fractionCompleted;
-            self.progressCallback(@[[NSNull null], progressSoFar]);
+            double progressSoFar = self.resourceRequest[self.fetchTag].progress.fractionCompleted;
+            if (hasListeners) { 
+                [self sendEventWithName:@"onProgress" body:@{@"body": [NSNumber numberWithDouble:progressSoFar] }];
+            }
         }
     }
     @catch(NSException *exception) {

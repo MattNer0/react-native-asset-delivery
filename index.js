@@ -2,8 +2,15 @@
  * @providesModule RNAssetDelivery
  */
 
-var { NativeModules } = require("react-native");
+var { NativeModules, NativeEventEmitter } = require("react-native");
 var RNAssetDelivery = NativeModules.RNAssetDelivery || {};
+var eventEmitter
+
+try {
+    eventEmitter = new NativeEventEmitter(ModuleWithEmitter);
+} catch(err) {
+    console.warn(err.message)
+}
 
 var AssetDelivery = {
     getPackLocation(name) {
@@ -21,11 +28,11 @@ var AssetDelivery = {
     fetchPack(name) {
         return RNAssetDelivery.fetchPack(name);
     },
-    fetchPackProgress(name, callback) {
-        return RNAssetDelivery.fetchPackProgress(name, callback);
-    },
     removePack(name) {
         return RNAssetDelivery.removePack(name);
+    },
+    addProgressListener(callback) {
+        return eventEmitter.addListener('onProgress', callback);
     }
 };
 
