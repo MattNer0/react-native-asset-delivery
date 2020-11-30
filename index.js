@@ -33,6 +33,13 @@ var AssetDelivery = {
     },
     addProgressListener(callback) {
         return eventEmitter.addListener('onProgress', callback);
+    },
+    removeAllListeners() {
+        try {
+            eventEmitter.removeAllListeners()
+        } catch (err) {
+            console.warn(err.message)
+        }
     }
 };
 

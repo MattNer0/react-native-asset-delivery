@@ -145,9 +145,9 @@ RCT_EXPORT_METHOD(fetchPack:(NSString *)name
     @try {
         if ([keyPath isEqualToString:@"fractionCompleted"]) {
             // Get the current progress as a value between 0 and 1
-            double progressSoFar = self.resourceRequest[self.fetchTag].progress.fractionCompleted;
+            double progressSoFar = self.resourceRequest[self.fetchTag].progress.fractionCompleted * 100.0;
             if (self.hasListeners) { 
-                [self sendEventWithName:@"onProgress" body:@{@"body": [NSNumber numberWithDouble:progressSoFar] }];
+                [self sendEventWithName:@"onProgress" body:@{@"perc": [NSNumber numberWithDouble:progressSoFar] }];
             }
         }
     }
