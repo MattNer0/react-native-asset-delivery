@@ -36,7 +36,7 @@ var AssetDelivery = {
     },
     removeAllListeners() {
         try {
-            eventEmitter.removeAllListeners()
+            eventEmitter.removeAllListeners('onProgress')
         } catch (err) {
             console.warn(err.message)
         }
