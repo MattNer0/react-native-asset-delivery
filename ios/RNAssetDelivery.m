@@ -71,6 +71,35 @@ RCT_EXPORT_METHOD(getPackState:(NSString *)name
     }
 }
 
+RCT_EXPORT_METHOD(getPacksState:(NSArray *)names 
+    resolver:(RCTPromiseResolveBlock)resolve 
+    rejecter:(RCTPromiseRejectBlock)reject) {
+
+    @try {
+        NSSet *tags = [NSSet setWithArray: names];
+        NSString name = [names componentsJoinedByString:@","];
+        self.resourceRequest[name] = [[NSBundleResourceRequest alloc] initWithTags:tags];
+        [self.resourceRequest[name] conditionallyBeginAccessingResourcesWithCompletionHandler:
+                                                        ^(BOOL resourcesAvailable)
+            {
+                if (resourcesAvailable) {
+                    resolve(@(YES));
+                } else {
+                    resolve(@(NO));
+                }
+            }
+        ];
+    }
+    @catch(NSException *exception) {
+        NSError *err = [NSError errorWithDomain:exception.name code:0 userInfo:@{
+            NSUnderlyingErrorKey: exception,
+            NSDebugDescriptionErrorKey: exception.userInfo ?: @{ },
+            NSLocalizedFailureReasonErrorKey: (exception.reason ?: @"???")
+        }];
+        reject(@"error", @"Couldn't get pack state.", err);
+    }
+}
+
 RCT_EXPORT_METHOD(getPackLocation:(NSString *)name 
     resolver:(RCTPromiseResolveBlock)resolve 
     rejecter:(RCTPromiseRejectBlock)reject) {

@@ -25,6 +25,9 @@ var AssetDelivery = {
     getPackState(name) {
         return RNAssetDelivery.getPackState(name);
     },
+    getPacksState(names) {
+        return RNAssetDelivery.getPacksState(names);
+    },
     fetchPack(name) {
         return RNAssetDelivery.fetchPack(name);
     },
@@ -33,6 +36,9 @@ var AssetDelivery = {
     },
     addProgressListener(callback) {
         return eventEmitter.addListener('onProgress', callback);
+    },
+    checkUpdate() {
+        return RNAssetDelivery.checkUpdate();
     },
     removeAllListeners() {
         try {

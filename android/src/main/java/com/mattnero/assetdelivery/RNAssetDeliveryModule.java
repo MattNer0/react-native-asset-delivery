@@ -1,15 +1,23 @@
 package com.mattnero.assetdelivery;
 
+import android.app.Activity;
+import android.content.Intent;
+import android.content.IntentSender;
+
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
+import com.facebook.react.bridge.ActivityEventListener;
+import com.facebook.react.bridge.BaseActivityEventListener;
 import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.WritableArray;
+import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 
 import com.google.android.play.core.assetpacks.AssetPackManager;
@@ -22,6 +30,14 @@ import com.google.android.play.core.tasks.OnFailureListener;
 import com.google.android.play.core.tasks.OnSuccessListener;
 import com.google.android.play.core.tasks.Task;
 import com.google.android.play.core.tasks.RuntimeExecutionException;
+
+import com.google.android.play.core.appupdate.AppUpdateInfo;
+import com.google.android.play.core.appupdate.AppUpdateManager;
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory;
+import com.google.android.play.core.install.model.AppUpdateType;
+import com.google.android.play.core.install.model.UpdateAvailability;
+
+import static android.app.Activity.RESULT_OK;
 
 /*
 import android.app.Activity;
@@ -67,13 +83,29 @@ public class RNAssetDeliveryModule extends ReactContextBaseJavaModule implements
     //private static final int DIRECTORY_SELECT_CODE = 65502;
     private static final String TAG = RNAssetDeliveryModule.class.getSimpleName();
 
+    private AppUpdateManager appUpdateManager;
+    private static final int MY_REQUEST_CODE = 543;
     private ReactApplicationContext reactContext;
     private AssetPackManager assetPackManager;
     //private Callback mCallback;
 
+    private final ActivityEventListener mActivityEventListener = new BaseActivityEventListener() {
+        @Override
+        public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent intent) {
+            if (requestCode == MY_REQUEST_CODE) {
+                if (resultCode != RESULT_OK) {
+                    System.out.println("Update flow failed! Result code: " + resultCode);
+                    // If the update is cancelled or fails,
+                    // you can request to start the update again.
+                }
+            }
+        }
+    };
+
     public RNAssetDeliveryModule(ReactApplicationContext reactContext) {
         super(reactContext);
         this.reactContext = reactContext;
+        this.reactContext.addActivityEventListener(mActivityEventListener);
         this.reactContext.addLifecycleEventListener(this);
         this.assetPackManager = AssetPackManagerFactory.getInstance(this.reactContext);
     }
@@ -95,6 +127,15 @@ public class RNAssetDeliveryModule extends ReactContextBaseJavaModule implements
     @Override
     public void onHostDestroy() {
         assetPackManager.clearListeners();
+    }
+
+    private ArrayList<String> getPacksList(ReadableArray packNames) {
+        ArrayList<String> packsList = new ArrayList<String>(packNames.size());
+        for (int i = 0; i < packNames.size(); i++) {
+            packsList.add(packNames.getString(i));
+        }
+
+        return packsList;
     }
 
     private WritableMap getStatusMap(AssetPackState assetPackState) {
@@ -232,6 +273,35 @@ public class RNAssetDeliveryModule extends ReactContextBaseJavaModule implements
     }
 
     @ReactMethod
+    public void getPacksState(final ReadableArray packNames, final Promise promise) {
+        assetPackManager.getPackStates(getPacksList(packNames))
+            .addOnSuccessListener(new OnSuccessListener<AssetPackStates>() {
+                @Override
+                public void onSuccess(AssetPackStates assetPackStates) {
+                    try {
+                        WritableArray statusMaps = Arguments.createArray();
+                        for (int i = 0; i < packNames.size(); i++) {
+                            AssetPackState assetPackState = assetPackStates.packStates().get(packNames.getString(i));
+                            statusMaps.pushMap(getStatusMap(assetPackState));
+                        }
+                        
+                        promise.resolve(statusMaps);
+
+                    } catch (RuntimeExecutionException e) {
+                        promise.reject("RuntimeExecutionException", e.getMessage());
+                        return;
+                    }
+                }
+            })
+            .addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(Exception e) {
+                    promise.reject(e.getClass().getSimpleName(), e.getMessage());
+                }
+            });
+    }
+
+    @ReactMethod
     public void fetchPack(final String packName, final Promise promise) {
         assetPackManager.fetch(Collections.singletonList(packName))
             .addOnSuccessListener(new OnSuccessListener<AssetPackStates>() {
@@ -270,5 +340,27 @@ public class RNAssetDeliveryModule extends ReactContextBaseJavaModule implements
                     promise.reject(e.getClass().getSimpleName(), e.getMessage());
                 }
             });
+    }
+
+    @ReactMethod
+    public void checkUpdate() {
+        appUpdateManager = AppUpdateManagerFactory.create(reactContext);
+        Task<AppUpdateInfo> appUpdateInfoTask = appUpdateManager.getAppUpdateInfo();
+        appUpdateInfoTask.addOnSuccessListener(new OnSuccessListener<AppUpdateInfo>() {
+            @Override
+            public void onSuccess(AppUpdateInfo appUpdateInfo) {
+                if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE && appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)) {
+                    try {
+                        appUpdateManager.startUpdateFlowForResult(
+                                appUpdateInfo,
+                                AppUpdateType.IMMEDIATE,
+                                reactContext.getCurrentActivity(),
+                                MY_REQUEST_CODE);
+                    } catch (IntentSender.SendIntentException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
     }
 }
