@@ -160,7 +160,7 @@ RCT_EXPORT_METHOD(fetchPack:(NSString *)name
             [self.fetchingTags addObject:name];
             NSSet *tags = [NSSet setWithArray: @[name]];
             self.resourceRequest[name] = [[NSBundleResourceRequest alloc] initWithTags:tags];
-            self.resourceRequest[name].loadingPriority = NSBundleResourceRequestLoadingPriorityUrgent;
+            self.resourceRequest[name].loadingPriority = 0.8; //NSBundleResourceRequestLoadingPriorityUrgent;
             [self.resourceRequest[name].progress addObserver:self forKeyPath:@"fractionCompleted" options:NSKeyValueObservingOptionNew context:&name];
             [self.resourceRequest[name] beginAccessingResourcesWithCompletionHandler:
                                         ^(NSError * __nullable error)
@@ -198,10 +198,9 @@ RCT_EXPORT_METHOD(fetchPack:(NSString *)name
     @try {
         if ([keyPath isEqualToString:@"fractionCompleted"]) {
             // Get the current progress as a value between 0 and 1
-            NSString *name = (__bridge NSString*)context;
-            double progressSoFar = self.resourceRequest[name].progress.fractionCompleted * 100.0;
+            NSNumber *newValue = [change objectForKey:NSKeyValueChangeNewKey];
             if (self.hasListeners) { 
-                [self sendEventWithName:@"onProgress" body:@{@"perc": [NSNumber numberWithDouble:progressSoFar] }];
+                [self sendEventWithName:@"onProgress" body:@{@"perc": newValue }];
             }
         }
     }
