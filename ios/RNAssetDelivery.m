@@ -39,7 +39,7 @@
     NSLog(@"Invalidate RNAssetDelivery");
     for (NSString *name in self.fetchingTags) {
         @try {
-            [self.resourceRequest[name].progress removeObserver:self forKeyPath:@"fractionCompleted" context:name];
+            [self.resourceRequest[name].progress removeObserver:self forKeyPath:@"fractionCompleted" context:&name];
         }
         @catch(NSException *exception) {
             NSLog(@"Fdd Exc: %@ ", exception.name);
