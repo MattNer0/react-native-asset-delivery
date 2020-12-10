@@ -4,6 +4,7 @@
 @interface RNAssetDelivery ()
   @property (nonatomic) NSMutableDictionary<NSString*, NSBundleResourceRequest*> *resourceRequest;
   @property (nonatomic) NSString *fetchTag;
+  @property (nonatomic) NSMutableArray *fetchingTags;
   @property bool hasListeners;
   //@property RCTResponseSenderBlock progressCallback;
 @end
@@ -34,11 +35,27 @@
     self.hasListeners = NO;
 }
 
+- (void)invalidate {
+    NSLog(@"Invalidate RNAssetDelivery");
+    for (NSString *name in self.fetchingTags) {
+        @try {
+            [self.resourceRequest[name].progress removeObserver:self forKeyPath:@"fractionCompleted" context:name];
+        }
+        @catch(NSException *exception) {
+            NSLog(@"Fdd Exc: %@ ", exception.name);
+            NSLog(@"Fdd Reason: %@ ", exception.reason);
+        }
+    }
+
+    [self.fetchingTags removeAllObjects];
+}
+
 RCT_EXPORT_MODULE()
 
 - (instancetype)init {
     self = [super init];
     self.resourceRequest = [[NSMutableDictionary alloc] init];
+    self.fetchingTags = [[NSMutableArray alloc] init];
 
     return self;
 }
@@ -77,7 +94,7 @@ RCT_EXPORT_METHOD(getPacksState:(NSArray *)names
 
     @try {
         NSSet *tags = [NSSet setWithArray: names];
-        NSString name = [names componentsJoinedByString:@","];
+        NSString *name = [names componentsJoinedByString:@","];
         self.resourceRequest[name] = [[NSBundleResourceRequest alloc] initWithTags:tags];
         [self.resourceRequest[name] conditionallyBeginAccessingResourcesWithCompletionHandler:
                                                         ^(BOOL resourcesAvailable)
@@ -138,11 +155,12 @@ RCT_EXPORT_METHOD(fetchPack:(NSString *)name
     rejecter:(RCTPromiseRejectBlock)reject) {
 
     @try {
-        self.fetchTag = name;
+        //self.fetchTag = name;
+        [self.fetchingTags addObject:name];
         NSSet *tags = [NSSet setWithArray: @[name]];
         self.resourceRequest[name] = [[NSBundleResourceRequest alloc] initWithTags:tags];
         self.resourceRequest[name].loadingPriority = NSBundleResourceRequestLoadingPriorityUrgent;
-        [self.resourceRequest[name].progress addObserver:self forKeyPath:@"fractionCompleted" options:NSKeyValueObservingOptionNew context:NULL];
+        [self.resourceRequest[name].progress addObserver:self forKeyPath:@"fractionCompleted" options:NSKeyValueObservingOptionNew context:name];
         [self.resourceRequest[name] beginAccessingResourcesWithCompletionHandler:
                                     ^(NSError * __nullable error)
             {
@@ -174,7 +192,8 @@ RCT_EXPORT_METHOD(fetchPack:(NSString *)name
     @try {
         if ([keyPath isEqualToString:@"fractionCompleted"]) {
             // Get the current progress as a value between 0 and 1
-            double progressSoFar = self.resourceRequest[self.fetchTag].progress.fractionCompleted * 100.0;
+            NSString *name = (NSString*)context;
+            double progressSoFar = self.resourceRequest[name].progress.fractionCompleted * 100.0;
             if (self.hasListeners) { 
                 [self sendEventWithName:@"onProgress" body:@{@"perc": [NSNumber numberWithDouble:progressSoFar] }];
             }
