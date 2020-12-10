@@ -155,24 +155,30 @@ RCT_EXPORT_METHOD(fetchPack:(NSString *)name
     rejecter:(RCTPromiseRejectBlock)reject) {
 
     @try {
-        //self.fetchTag = name;
-        [self.fetchingTags addObject:name];
-        NSSet *tags = [NSSet setWithArray: @[name]];
-        self.resourceRequest[name] = [[NSBundleResourceRequest alloc] initWithTags:tags];
-        self.resourceRequest[name].loadingPriority = NSBundleResourceRequestLoadingPriorityUrgent;
-        [self.resourceRequest[name].progress addObserver:self forKeyPath:@"fractionCompleted" options:NSKeyValueObservingOptionNew context:name];
-        [self.resourceRequest[name] beginAccessingResourcesWithCompletionHandler:
-                                    ^(NSError * __nullable error)
-            {
-                if (error) {
-                    reject(@"error", @"resources not available", error);
-                    return;
+        if (@available(iOS 9.0, *)) {
+            //self.fetchTag = name;
+            [self.fetchingTags addObject:name];
+            NSSet *tags = [NSSet setWithArray: @[name]];
+            self.resourceRequest[name] = [[NSBundleResourceRequest alloc] initWithTags:tags];
+            self.resourceRequest[name].loadingPriority = NSBundleResourceRequestLoadingPriorityUrgent;
+            [self.resourceRequest[name].progress addObserver:self forKeyPath:@"fractionCompleted" options:NSKeyValueObservingOptionNew context:&name];
+            [self.resourceRequest[name] beginAccessingResourcesWithCompletionHandler:
+                                        ^(NSError * __nullable error)
+                {
+                    if (error) {
+                        reject(@"error", @"resources not available", error);
+                        return;
+                    }
+            
+                    // The associated resources are loaded
+                    resolve(@(YES));
                 }
+            ];
+        } else {
+            NSLog(@"Invalid iOS version");
+            resolve(@(NO));
+        }
         
-                // The associated resources are loaded
-                resolve(@(YES));
-            }
-        ];
     }
     @catch(NSException *exception) {
         NSError *err = [NSError errorWithDomain:exception.name code:0 userInfo:@{
@@ -192,7 +198,7 @@ RCT_EXPORT_METHOD(fetchPack:(NSString *)name
     @try {
         if ([keyPath isEqualToString:@"fractionCompleted"]) {
             // Get the current progress as a value between 0 and 1
-            NSString *name = (NSString*)context;
+            NSString *name = (__bridge NSString*)context;
             double progressSoFar = self.resourceRequest[name].progress.fractionCompleted * 100.0;
             if (self.hasListeners) { 
                 [self sendEventWithName:@"onProgress" body:@{@"perc": [NSNumber numberWithDouble:progressSoFar] }];
@@ -210,24 +216,29 @@ RCT_EXPORT_METHOD(removePack:(NSString *)name
     rejecter:(RCTPromiseRejectBlock)reject) {
 
     @try {
-        if ([self.resourceRequest objectForKey:name]) {
-            [self.resourceRequest[name] endAccessingResources];
-            resolve(@(YES));
-        } else {
-            __weak typeof(self.resourceRequest) weakDictionary = self.resourceRequest;
-            NSSet *tags = [NSSet setWithArray: @[name]];
-            self.resourceRequest[name] = [[NSBundleResourceRequest alloc] initWithTags:tags];
-            [self.resourceRequest[name] conditionallyBeginAccessingResourcesWithCompletionHandler:
-                                                            ^(BOOL resourcesAvailable)
-                {
-                    __strong typeof(weakDictionary) strongDictionary = weakDictionary;
-                    if (resourcesAvailable) {
-                        [strongDictionary[name] endAccessingResources];
-                    }
+        if (@available(iOS 9.0, *)) {
+            if ([self.resourceRequest objectForKey:name]) {
+                [self.resourceRequest[name] endAccessingResources];
+                resolve(@(YES));
+            } else {
+                __weak typeof(self.resourceRequest) weakDictionary = self.resourceRequest;
+                NSSet *tags = [NSSet setWithArray: @[name]];
+                self.resourceRequest[name] = [[NSBundleResourceRequest alloc] initWithTags:tags];
+                [self.resourceRequest[name] conditionallyBeginAccessingResourcesWithCompletionHandler:
+                                                                ^(BOOL resourcesAvailable)
+                    {
+                        __strong typeof(weakDictionary) strongDictionary = weakDictionary;
+                        if (resourcesAvailable) {
+                            [strongDictionary[name] endAccessingResources];
+                        }
 
-                    resolve(@(YES));
-                }
-            ];
+                        resolve(@(YES));
+                    }
+                ];
+            }
+        } else {
+            NSLog(@"Invalid iOS version");
+            resolve(@(NO));
         }
     }
     @catch(NSException *exception) {
