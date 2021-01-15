@@ -109,7 +109,7 @@ public class RNAssetDeliveryModule extends ReactContextBaseJavaModule implements
                 Log.d("MainActivity", e.getMessage());
             }
         }
-    }
+    };
 
     private final ActivityEventListener mActivityEventListener = new BaseActivityEventListener() {
         @Override
