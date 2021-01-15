@@ -102,11 +102,10 @@ public class RNAssetDeliveryModule extends ReactContextBaseJavaModule implements
                 payload.putInt("statusCode", assetPackState.status());
                 payload.putInt("errorCode", assetPackState.errorCode());
 
-                this.reactContext
-                    .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
                     .emit("onProgress", payload);
             } catch (Exception e) {
-                Log.d("MainActivity", e.getMessage());
+                e.printStackTrace();
             }
         }
     };
