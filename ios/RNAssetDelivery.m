@@ -200,7 +200,8 @@ RCT_EXPORT_METHOD(fetchPack:(NSString *)name
             // Get the current progress as a value between 0 and 1
             NSNumber *newValue = [change objectForKey:NSKeyValueChangeNewKey];
             if (self.hasListeners) { 
-                [self sendEventWithName:@"onProgress" body:@{@"perc": newValue }];
+                NSString *val = *((__unsafe_unretained NSString **)(context));
+                [self sendEventWithName:@"onProgress" body:@{@"perc": newValue, @"context": val }];
             }
         }
     }

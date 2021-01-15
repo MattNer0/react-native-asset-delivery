@@ -16,6 +16,8 @@ import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 
+import com.facebook.react.modules.core.DeviceEventManagerModule;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,6 +27,7 @@ import com.google.android.play.core.assetpacks.AssetPackManagerFactory;
 import com.google.android.play.core.assetpacks.AssetPackLocation;
 import com.google.android.play.core.assetpacks.AssetPackStates;
 import com.google.android.play.core.assetpacks.AssetPackState;
+import com.google.android.play.core.assetpacks.AssetPackStateUpdateListener;
 import com.google.android.play.core.assetpacks.model.AssetPackStatus;
 import com.google.android.play.core.tasks.OnFailureListener;
 import com.google.android.play.core.tasks.OnSuccessListener;
@@ -89,6 +92,25 @@ public class RNAssetDeliveryModule extends ReactContextBaseJavaModule implements
     private AssetPackManager assetPackManager;
     //private Callback mCallback;
 
+    AssetPackStateUpdateListener mAssetPackStateUpdateListener = new AssetPackStateUpdateListener() {
+        @Override
+        public void onStateUpdate(AssetPackState assetPackState) {
+            try {
+                WritableMap payload = Arguments.createMap();
+                payload.putString("context", assetPackState.name());
+                payload.putInt("perc", assetPackState.transferProgressPercentage());
+                payload.putInt("statusCode", assetPackState.status());
+                payload.putInt("errorCode", assetPackState.errorCode());
+
+                this.reactContext
+                    .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                    .emit("onProgress", payload);
+            } catch (Exception e) {
+                Log.d("MainActivity", e.getMessage());
+            }
+        }
+    }
+
     private final ActivityEventListener mActivityEventListener = new BaseActivityEventListener() {
         @Override
         public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent intent) {
@@ -107,7 +129,7 @@ public class RNAssetDeliveryModule extends ReactContextBaseJavaModule implements
         this.reactContext = reactContext;
         this.reactContext.addActivityEventListener(mActivityEventListener);
         this.reactContext.addLifecycleEventListener(this);
-        this.assetPackManager = AssetPackManagerFactory.getInstance(this.reactContext);
+        this.assetPackManager = AssetPackManagerFactory.getInstance(this.reactContext).registerListener(mAssetPackStateUpdateListener);
     }
 
     @Override

@@ -12,6 +12,8 @@ try {
     console.warn(err.message)
 }
 
+let hasListener = false
+
 var AssetDelivery = {
     getPackLocation(name) {
         return RNAssetDelivery.getPackLocation(name);
@@ -35,12 +37,17 @@ var AssetDelivery = {
         return RNAssetDelivery.removePack(name);
     },
     addProgressListener(callback) {
+        hasListener = true
         return eventEmitter.addListener('onProgress', callback);
+    },
+    hasProgressListener() {
+        return Boolean(hasListener)
     },
     checkUpdate() {
         return RNAssetDelivery.checkUpdate();
     },
     removeAllListeners() {
+        hasListener = false
         try {
             eventEmitter.removeAllListeners('onProgress')
         } catch (err) {
