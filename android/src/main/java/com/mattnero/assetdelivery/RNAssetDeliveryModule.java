@@ -157,12 +157,15 @@ public class RNAssetDeliveryModule extends ReactContextBaseJavaModule implements
     private WritableMap getStatusMap(AssetPackState assetPackState) {
         WritableMap statusMap = Arguments.createMap();
         int statusCode = assetPackState.status();
+        double downloaded = (double)assetPackState.bytesDownloaded();
+        double total = (double)assetPackState.totalBytesToDownload();
         statusMap.putString("name", assetPackState.name());
         statusMap.putInt("statusCode", statusCode);
         statusMap.putInt("errorCode", assetPackState.errorCode());
-        statusMap.putDouble("percentage", assetPackState.transferProgressPercentage() / 100.0);
-        statusMap.putDouble("bytesDownloaded", (double)assetPackState.bytesDownloaded());
-        statusMap.putDouble("totalBytes", (double)assetPackState.totalBytesToDownload());
+        statusMap.putDouble("transferProgressPercentage", assetPackState.transferProgressPercentage());
+        statusMap.putDouble("bytesDownloaded", downloaded);
+        statusMap.putDouble("totalBytes", total);
+        statusMap.putDouble("percentage", downloaded / total);
 
         switch (statusCode) {
             case AssetPackStatus.CANCELED:
