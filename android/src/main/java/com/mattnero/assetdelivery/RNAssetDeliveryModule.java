@@ -160,7 +160,7 @@ public class RNAssetDeliveryModule extends ReactContextBaseJavaModule implements
         statusMap.putString("name", assetPackState.name());
         statusMap.putInt("statusCode", statusCode);
         statusMap.putInt("errorCode", assetPackState.errorCode());
-        statusMap.putDouble("percentage", assetPackState.transferProgressPercentage() / 100);
+        statusMap.putDouble("percentage", ((double) assetPackState.transferProgressPercentage()) / 100);
         statusMap.putDouble("bytesDownloaded", (double)assetPackState.bytesDownloaded());
         statusMap.putDouble("totalBytes", (double)assetPackState.totalBytesToDownload());
 
