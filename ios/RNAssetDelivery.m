@@ -201,7 +201,7 @@ RCT_EXPORT_METHOD(fetchPack:(NSString *)name
             NSNumber *newValue = [change objectForKey:NSKeyValueChangeNewKey];
             if (self.hasListeners) { 
                 NSString *val = *((__unsafe_unretained NSString **)(context));
-                [self sendEventWithName:@"onProgress" body:@{@"perc": newValue, @"context": val }];
+                [self sendEventWithName:@"onProgress" body:@{@"percentage": newValue, @"name": val }];
             }
         }
     }

@@ -96,14 +96,8 @@ public class RNAssetDeliveryModule extends ReactContextBaseJavaModule implements
         @Override
         public void onStateUpdate(AssetPackState assetPackState) {
             try {
-                WritableMap payload = Arguments.createMap();
-                payload.putString("context", assetPackState.name());
-                payload.putInt("perc", assetPackState.transferProgressPercentage());
-                payload.putInt("statusCode", assetPackState.status());
-                payload.putInt("errorCode", assetPackState.errorCode());
-
                 reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-                    .emit("onProgress", payload);
+                    .emit("onProgress", getStatusMap(assetPackState));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -166,7 +160,7 @@ public class RNAssetDeliveryModule extends ReactContextBaseJavaModule implements
         statusMap.putString("name", assetPackState.name());
         statusMap.putInt("statusCode", statusCode);
         statusMap.putInt("errorCode", assetPackState.errorCode());
-        statusMap.putInt("progressPercentage", assetPackState.transferProgressPercentage());
+        statusMap.putDouble("percentage", assetPackState.transferProgressPercentage() / 100);
         statusMap.putDouble("bytesDownloaded", (double)assetPackState.bytesDownloaded());
         statusMap.putDouble("totalBytes", (double)assetPackState.totalBytesToDownload());
 
