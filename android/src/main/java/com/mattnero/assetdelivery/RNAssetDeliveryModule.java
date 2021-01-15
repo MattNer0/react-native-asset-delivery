@@ -92,7 +92,7 @@ public class RNAssetDeliveryModule extends ReactContextBaseJavaModule implements
     private AssetPackManager assetPackManager;
     //private Callback mCallback;
 
-    AssetPackStateUpdateListener mAssetPackStateUpdateListener = new AssetPackStateUpdateListener() {
+    private final AssetPackStateUpdateListener mAssetPackStateUpdateListener = new AssetPackStateUpdateListener() {
         @Override
         public void onStateUpdate(AssetPackState assetPackState) {
             try {
@@ -128,7 +128,8 @@ public class RNAssetDeliveryModule extends ReactContextBaseJavaModule implements
         this.reactContext = reactContext;
         this.reactContext.addActivityEventListener(mActivityEventListener);
         this.reactContext.addLifecycleEventListener(this);
-        this.assetPackManager = AssetPackManagerFactory.getInstance(this.reactContext).registerListener(mAssetPackStateUpdateListener);
+        this.assetPackManager = AssetPackManagerFactory.getInstance(this.reactContext);
+        this.assetPackManager.registerListener(mAssetPackStateUpdateListener);
     }
 
     @Override
