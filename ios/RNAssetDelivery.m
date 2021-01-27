@@ -3,7 +3,8 @@
 #import <React/RCTLog.h>
 
 @interface RNAssetDelivery ()
-  @property (nonatomic) NSMutableDictionary<NSString*, NSBundleResourceRequest*> *resourceRequest;
+  @property (nonatomic) NSMutableDictionary<NSString*, NSBundleResourceRequest*> *checkRequest;
+  @property (nonatomic) NSMutableDictionary<NSString*, RNBundleListener*> *downloadRequest;
   @property (nonatomic) NSString *fetchTag;
   @property (nonatomic) NSMutableArray *fetchingTags;
   @property bool hasListeners;
@@ -45,14 +46,14 @@
 
 - (void)invalidate
 {
-    NSLog(@"Invalidate RNAssetDelivery");
+    RCTLogInfo(@"Invalidate RNAssetDelivery");
     for (NSString *name in self.fetchingTags) {
         @try {
-            [self.resourceRequest[name].progress removeObserver:self forKeyPath:@"fractionCompleted" context:&name];
+            [self.downloadRequest[name] removeObserver];
         }
         @catch(NSException *exception) {
-            NSLog(@"Fdd Exc: %@ ", exception.name);
-            NSLog(@"Fdd Reason: %@ ", exception.reason);
+            RCTLogWarn(@"Fdd Exc: %@ ", exception.name);
+            RCTLogWarn(@"Fdd Reason: %@ ", exception.reason);
         }
     }
 
@@ -63,7 +64,8 @@ RCT_EXPORT_MODULE()
 
 - (instancetype)init {
     self = [super init];
-    self.resourceRequest = [[NSMutableDictionary alloc] init];
+    self.checkRequest = [[NSMutableDictionary alloc] init];
+    self.downloadRequest = [[NSMutableDictionary alloc] init];
     self.fetchingTags = [[NSMutableArray alloc] init];
 
     return self;
@@ -74,18 +76,23 @@ RCT_EXPORT_METHOD(getPackState:(NSString *)name
     rejecter:(RCTPromiseRejectBlock)reject) {
 
     @try {
-        NSSet *tags = [NSSet setWithArray: @[name]];
-        self.resourceRequest[name] = [[NSBundleResourceRequest alloc] initWithTags:tags];
-        [self.resourceRequest[name] conditionallyBeginAccessingResourcesWithCompletionHandler:
-                                                        ^(BOOL resourcesAvailable)
-            {
-                if (resourcesAvailable) {
-                    resolve(@(YES));
-                } else {
-                    resolve(@(NO));
+        if (@available(iOS 9.0, *)) {
+            NSSet *tags = [NSSet setWithArray: @[name]];
+            self.checkRequest[name] = [[NSBundleResourceRequest alloc] initWithTags:tags];
+            [self.checkRequest[name] conditionallyBeginAccessingResourcesWithCompletionHandler:
+                                                            ^(BOOL resourcesAvailable)
+                {
+                    if (resourcesAvailable) {
+                        resolve(@(YES));
+                    } else {
+                        resolve(@(NO));
+                    }
                 }
-            }
-        ];
+            ];
+        } else {
+            RCTLogWarn(@"Invalid iOS version");
+            resolve(@(NO));
+        }
     }
     @catch(NSException *exception) {
         NSError *err = [NSError errorWithDomain:exception.name code:0 userInfo:@{
@@ -102,19 +109,24 @@ RCT_EXPORT_METHOD(getPacksState:(NSArray *)names
     rejecter:(RCTPromiseRejectBlock)reject) {
 
     @try {
-        NSSet *tags = [NSSet setWithArray: names];
-        NSString *name = [names componentsJoinedByString:@","];
-        self.resourceRequest[name] = [[NSBundleResourceRequest alloc] initWithTags:tags];
-        [self.resourceRequest[name] conditionallyBeginAccessingResourcesWithCompletionHandler:
-                                                        ^(BOOL resourcesAvailable)
-            {
-                if (resourcesAvailable) {
-                    resolve(@(YES));
-                } else {
-                    resolve(@(NO));
+        if (@available(iOS 9.0, *)) {
+            NSSet *tags = [NSSet setWithArray: names];
+            NSString *name = [names componentsJoinedByString:@","];
+            self.checkRequest[name] = [[NSBundleResourceRequest alloc] initWithTags:tags];
+            [self.checkRequest[name] conditionallyBeginAccessingResourcesWithCompletionHandler:
+                                                            ^(BOOL resourcesAvailable)
+                {
+                    if (resourcesAvailable) {
+                        resolve(@(YES));
+                    } else {
+                        resolve(@(NO));
+                    }
                 }
-            }
-        ];
+            ];
+        } else {
+            RCTLogWarn(@"Invalid iOS version");
+            resolve(@(NO));
+        }
     }
     @catch(NSException *exception) {
         NSError *err = [NSError errorWithDomain:exception.name code:0 userInfo:@{
@@ -166,14 +178,15 @@ RCT_EXPORT_METHOD(fetchPack:(NSString *)name
     @try {
         if (@available(iOS 9.0, *)) {
             //self.fetchTag = name;
-            RNBundleListener *mRequest = [[RNBundleListener alloc] initWithName:name fromParent:self];
-            [mRequest accessResource];
+            [self.fetchingTags addObject:name];
+            self.downloadRequest[name] = [[RNBundleListener alloc] initWithName:name fromParent:self];
+            [self.downloadRequest[name] accessResource];
+            RCTLogInfo(@"Download start");
             resolve(@(YES));
         } else {
-            NSLog(@"Invalid iOS version");
+            RCTLogWarn(@"Invalid iOS version");
             resolve(@(NO));
         }
-        
     }
     @catch(NSException *exception) {
         NSError *err = [NSError errorWithDomain:exception.name code:0 userInfo:@{
@@ -191,10 +204,19 @@ RCT_EXPORT_METHOD(removePack:(NSString *)name
 
     @try {
         if (@available(iOS 9.0, *)) {
-            if ([self.resourceRequest objectForKey:name]) {
-                [self.resourceRequest[name] endAccessingResources];
+            if ([self.checkRequest objectForKey:name]) {
+                [self.checkRequest[name] endAccessingResources];
                 resolve(@(YES));
-            } else {
+                return;
+            }
+
+            if ([self.downloadRequest objectForKey:name]) {
+                [self.downloadRequest[name] endAccess];
+                resolve(@(YES));
+                return;
+            }
+
+            /*else {
                 __weak typeof(self.resourceRequest) weakDictionary = self.resourceRequest;
                 NSSet *tags = [NSSet setWithArray: @[name]];
                 self.resourceRequest[name] = [[NSBundleResourceRequest alloc] initWithTags:tags];
@@ -209,9 +231,12 @@ RCT_EXPORT_METHOD(removePack:(NSString *)name
                         resolve(@(YES));
                     }
                 ];
-            }
+            }*/
+
+            RCTLogWarn(@"No request for bundle");
+            resolve(@(NO));
         } else {
-            NSLog(@"Invalid iOS version");
+            RCTLogWarn(@"Invalid iOS version");
             resolve(@(NO));
         }
     }

@@ -23,6 +23,28 @@
     return self;
 }
 
+- (void)removeObserver
+{
+    @try {
+        [self.resourceRequest.progress removeObserver:self forKeyPath:@"fractionCompleted" context:nil];
+    }
+    @catch(NSException *exception) {
+        RCTLogWarn(@"Fdd Exc: %@ ", exception.name);
+        RCTLogWarn(@"Fdd Reason: %@ ", exception.reason);
+    }
+}
+
+- (void)endAccess
+{
+    @try {
+        [self.resourceRequest endAccessingResources];
+    }
+    @catch(NSException *exception) {
+        RCTLogWarn(@"Fdd Exc: %@ ", exception.name);
+        RCTLogWarn(@"Fdd Reason: %@ ", exception.reason);
+    }
+}
+
 - (void)accessResource
 {
     @try {
@@ -34,21 +56,21 @@
                                         ^(NSError * __nullable error)
                 {
                     if (error) {
-                        NSLog(@"Resource error");
+                        RCTLogInfo(@"Resource error");
                         return;
                     }
             
                     // The associated resources are loaded
-                    NSLog(@"Resource loaded");
+                    RCTLogInfo(@"Resource loaded");
                 }
             ];
         } else {
-            NSLog(@"Invalid iOS version");
+            RCTLogWarn(@"Invalid iOS version");
         }
     }
     @catch(NSException *exception) {
-        NSLog(@"Fdd Exc: %@ ", exception.name);
-        NSLog(@"Fdd Reason: %@ ", exception.reason);
+        RCTLogWarn(@"Fdd Exc: %@ ", exception.name);
+        RCTLogWarn(@"Fdd Reason: %@ ", exception.reason);
     }
 }
 
@@ -64,8 +86,8 @@
         }
     }
     @catch(NSException *exception) {
-        NSLog(@"Fdd Exc: %@ ", exception.name);
-        NSLog(@"Fdd Reason: %@ ", exception.reason);
+        RCTLogWarn(@"Fdd Exc: %@ ", exception.name);
+        RCTLogWarn(@"Fdd Reason: %@ ", exception.reason);
     }
 }
 
