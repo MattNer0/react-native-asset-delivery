@@ -9,5 +9,5 @@
 #endif
 
 @interface RNAssetDelivery : RCTEventEmitter <RCTBridgeModule>
-
+- (void)sendEventPercentage:(NSNumber *)perc withBundle:(NSString *)name;
 @end

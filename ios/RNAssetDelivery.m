@@ -7,7 +7,6 @@
   @property (nonatomic) NSString *fetchTag;
   @property (nonatomic) NSMutableArray *fetchingTags;
   @property bool hasListeners;
-  //@property RCTResponseSenderBlock progressCallback;
 @end
 
 @implementation RNAssetDelivery

@@ -1,4 +1,5 @@
 #import "RNBundleListener.h"
+#import "RNAssetDelivery.h"
 #import <React/RCTLog.h>
 
 @interface RNBundleListener ()
@@ -15,9 +16,9 @@
 {
     self = [super init];
     if (self) {
-        bundleName = name;
-        mParent = parent;
-        tags = [NSSet setWithArray: @[name]];
+        self.bundleName = name;
+        self.mParent = parent;
+        self.tags = [NSSet setWithArray: @[name]];
     }
     return self;
 }
@@ -28,7 +29,7 @@
         if (@available(iOS 9.0, *)) {
             self.resourceRequest = [[NSBundleResourceRequest alloc] initWithTags:self.tags];
             self.resourceRequest.loadingPriority = 0.8; //NSBundleResourceRequestLoadingPriorityUrgent;
-            [self.resourceRequest.progress addObserver:self forKeyPath:@"fractionCompleted" options:NSKeyValueObservingOptionNew context:&self];
+            [self.resourceRequest.progress addObserver:self forKeyPath:@"fractionCompleted" options:NSKeyValueObservingOptionNew context:nil];
             [self.resourceRequest beginAccessingResourcesWithCompletionHandler:
                                         ^(NSError * __nullable error)
                 {
