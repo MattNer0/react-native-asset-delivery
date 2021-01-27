@@ -1,4 +1,5 @@
 #import "RNAssetDelivery.h"
+#import "RNBundleListener.h"
 #import <React/RCTLog.h>
 
 @interface RNAssetDelivery ()
@@ -35,7 +36,16 @@
     self.hasListeners = NO;
 }
 
-- (void)invalidate {
+- (void)sendEventPercentage:(NSNumber *)perc
+                    withBundle:(NSString *)name
+{
+    if (self.hasListeners) {
+        [self sendEventWithName:@"onProgress" body:@{@"percentage": perc, @"name": name }];
+    }
+}
+
+- (void)invalidate
+{
     NSLog(@"Invalidate RNAssetDelivery");
     for (NSString *name in self.fetchingTags) {
         @try {
@@ -157,23 +167,9 @@ RCT_EXPORT_METHOD(fetchPack:(NSString *)name
     @try {
         if (@available(iOS 9.0, *)) {
             //self.fetchTag = name;
-            [self.fetchingTags addObject:name];
-            NSSet *tags = [NSSet setWithArray: @[name]];
-            self.resourceRequest[name] = [[NSBundleResourceRequest alloc] initWithTags:tags];
-            self.resourceRequest[name].loadingPriority = 0.8; //NSBundleResourceRequestLoadingPriorityUrgent;
-            [self.resourceRequest[name].progress addObserver:self forKeyPath:@"fractionCompleted" options:NSKeyValueObservingOptionNew context:&name];
-            [self.resourceRequest[name] beginAccessingResourcesWithCompletionHandler:
-                                        ^(NSError * __nullable error)
-                {
-                    if (error) {
-                        reject(@"error", @"resources not available", error);
-                        return;
-                    }
-            
-                    // The associated resources are loaded
-                    resolve(@(YES));
-                }
-            ];
+            RNBundleListener *mRequest = [[RNBundleListener alloc] initWithName:name fromParent:self];
+            [mRequest accessResource];
+            resolve(@(YES));
         } else {
             NSLog(@"Invalid iOS version");
             resolve(@(NO));
@@ -187,27 +183,6 @@ RCT_EXPORT_METHOD(fetchPack:(NSString *)name
             NSLocalizedFailureReasonErrorKey: (exception.reason ?: @"???")
         }];
         reject(@"error", @"Couldn't fetch pack.", err);
-    }
-}
-
-- (void)observeValueForKeyPath:(NSString *)keyPath
-                        ofObject:(id)object
-                        change:(NSDictionary *)change
-                        context:(void *)context
-{
-    @try {
-        if ([keyPath isEqualToString:@"fractionCompleted"]) {
-            // Get the current progress as a value between 0 and 1
-            NSNumber *newValue = [change objectForKey:NSKeyValueChangeNewKey];
-            if (self.hasListeners) { 
-                NSString *val = *((__unsafe_unretained NSString **)(context));
-                [self sendEventWithName:@"onProgress" body:@{@"percentage": newValue, @"name": val }];
-            }
-        }
-    }
-    @catch(NSException *exception) {
-        NSLog(@"Fdd Exc: %@ ", exception.name);
-        NSLog(@"Fdd Reason: %@ ", exception.reason);
     }
 }
 
